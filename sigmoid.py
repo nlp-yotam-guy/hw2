@@ -13,10 +13,8 @@ def sigmoid(x):
     Return:
     s -- sigmoid(x)
     """
-
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    s = np.exp(-x)
+    s = 1/(1+s)
 
     return s
 
@@ -33,10 +31,11 @@ def sigmoid_grad(s):
     Return:
     ds -- Your computed gradient.
     """
+    # t1 = sigmoid(s)
+    # t2 = 1-sigmoid(s)
+    # ds = t1*t2
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    ds = s*(1-s)
 
     return ds
 

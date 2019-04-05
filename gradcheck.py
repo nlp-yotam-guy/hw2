@@ -19,19 +19,31 @@ def gradcheck_naive(f, x):
     fx, grad = f(x) # Evaluate function value at original point
     h = 1e-4        # Do not change this!
 
-    # Iterate over all indexes in x
+    # Iterate over all indexes ix in x to check the gradient.
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
     while not it.finished:
         ix = it.multi_index
 
-        # Try modifying x[ix] with h defined above to compute
-        # numerical gradients. Make sure you call random.setstate(rndstate)
+        # Try modifying x[ix] with h defined above to compute numerical
+        # gradients (numgrad).
+
+        # Use the centered difference of the gradient.
+        # It has smaller asymptotic error than forward / backward difference
+        # methods. If you are curious, check out here:
+        # https://math.stackexchange.com/questions/2326181/when-to-use-forward-or-central-difference-approximations
+
+        # Make sure you call random.setstate(rndstate)
         # before calling f(x) each time. This will make it possible
         # to test cost functions with built in randomness later.
 
-        ### YOUR CODE HERE:
-        raise NotImplementedError
-        ### END YOUR CODE
+        random.setstate(rndstate)
+        x[ix] = x[ix]+h
+        t1,_ = f(x)
+        x[ix] = x[ix] - 2*h
+        random.setstate(rndstate)
+        t2,_ = f(x)
+        x[ix] = x[ix]+h
+        numgrad = (t1-t2)/(2*h)
 
         # Compare gradients
         reldiff = abs(numgrad - grad[ix]) / max(1, abs(numgrad), abs(grad[ix]))
