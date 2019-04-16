@@ -86,29 +86,34 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     Goes over an evaluation dataset and computes the perplexity for it with
     the current counts and a linear interpolation
     """
-    M = size_of_corpus(unigram_counts)
+    M=0
+    log_p = 0
     #perplexity = 0
-    mult = 1
     for sentence in eval_dataset:
         a = ['*', '*']
         a.extend(list(sentence))
         sentence = a
-        for j in range(2,len(sentence)):
-            b = 0
+        for j in range(2, len(sentence)):
             if (sentence[j-2],sentence[j-1],sentence[j]) in trigram_counts:
                 q_tri = float(trigram_counts[(sentence[j-2],sentence[j-1],sentence[j])]) / bigram_counts[(sentence[j-2],sentence[j-1])]
             else:
-                q_tri = 1.0 / train_token_count
+                q_tri = 0
             if (sentence[j-1],sentence[j]) in bigram_counts:
                 q_bi = float(bigram_counts[(sentence[j-1],sentence[j])]) / unigram_counts[(sentence[j-1])]
             else:
-                q_bi = 1.0 / train_token_count
+                q_bi = 0
             if (sentence[j],) in unigram_counts:
                 q_uni = float(unigram_counts[(sentence[j],)]) / M
             else:
-                q_uni = 1.0 / train_token_count
-            mult *= (lambda1*q_tri + lambda2*q_bi + (1-lambda1-lambda2)*q_uni)
-    perplexity = 2**(-np.log2(mult) / M)
+                q_uni = 0
+            mult = (lambda1*q_tri + lambda2*q_bi + (1-lambda1-lambda2)*q_uni)
+            if mult == 0:
+                continue
+            M+=1
+            log_p -= np.log2(mult)
+        print log_p
+
+    perplexity = 2**(log_p / float(M))
     return perplexity
 
 def test_ngram():
