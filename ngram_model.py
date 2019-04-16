@@ -22,7 +22,7 @@ S_dev = du.docs_to_indices(docs_dev, word_to_num)
 
 
 def add_to_dict(key,dict):
-    if key in dict.keys():
+    if key in dict:
         dict[key] += 1
         return 0
     else:
@@ -56,7 +56,7 @@ def train_ngrams(dataset):
     unigram_counts = dict()
     token_count = 0
 
-    for sentence in dataset[:1000]:
+    for sentence in dataset:
         a = ['*','*']
         a.extend(list(sentence))
         sentence = a
@@ -72,10 +72,12 @@ def train_ngrams(dataset):
         # for trigram in sentence_trigrams:
         #     token_count += add_to_dict(trigram,trigram_counts)
 
-        for j in range(2,len(sentence)):
-            add_to_dict((sentence[j-2],sentence[j-1],sentence[j]),trigram_counts)
-            add_to_dict((sentence[j-1], sentence[j]), bigram_counts)
-            add_to_dict((sentence[j]), unigram_counts)
+        for j in range(len(sentence)-2):
+            token_count += add_to_dict((sentence[j],sentence[j+1],sentence[j+2]),trigram_counts)
+            token_count += add_to_dict((sentence[j], sentence[j+1]), bigram_counts)
+            # if j<=1:
+            #     continue
+            token_count += add_to_dict((sentence[j]), unigram_counts)
 
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
@@ -87,7 +89,7 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     M = size_of_corpus(unigram_counts)
     #perplexity = 0
     mult = 1
-    for sentence in eval_dataset[:1000]:
+    for sentence in eval_dataset:
         a = ['*', '*']
         a.extend(list(sentence))
         sentence = a
@@ -95,10 +97,18 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
             b = 0
             if (sentence[j-2],sentence[j-1],sentence[j]) in trigram_counts:
                 q_tri = float(trigram_counts[(sentence[j-2],sentence[j-1],sentence[j])]) / bigram_counts[(sentence[j-2],sentence[j-1])]
+            else:
+                q_tri = 1.0 / train_token_count
+            if (sentence[j-1],sentence[j]) in bigram_counts:
                 q_bi = float(bigram_counts[(sentence[j-1],sentence[j])]) / unigram_counts[(sentence[j-1])]
-                q_uni = float(unigram_counts[(sentence[j])]) / M
-                mult *= (lambda1*q_tri + lambda2*q_bi + (1-lambda1-lambda2)*q_uni)
-    perplexity = 2**(np.log2(mult) / M)
+            else:
+                q_bi = 1.0 / train_token_count
+            if (sentence[j],) in unigram_counts:
+                q_uni = float(unigram_counts[(sentence[j],)]) / M
+            else:
+                q_uni = 1.0 / train_token_count
+            mult *= (lambda1*q_tri + lambda2*q_bi + (1-lambda1-lambda2)*q_uni)
+    perplexity = 2**(-np.log2(mult) / M)
     return perplexity
 
 def test_ngram():
