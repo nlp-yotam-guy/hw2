@@ -53,7 +53,6 @@ def forward_backward_prop(data, labels, params, dimensions):
     ### Unpack network parameters (do not modify)
     ofs = 0
     Dx, H, Dy = (dimensions[0], dimensions[1], dimensions[2])
-
     W1 = np.reshape(params[ofs:ofs+ Dx * H], (Dx, H))
     ofs += Dx * H
     b1 = np.reshape(params[ofs:ofs + H], (1, H))
@@ -64,14 +63,18 @@ def forward_backward_prop(data, labels, params, dimensions):
 
     ### YOUR CODE HERE: forward propagation
     layer1 = np.dot(data, W1) + b1
-    activation1 = sigmoid(layer1)
-    layer2 = np.dot(activation1, W2) + b2
+    h = sigmoid(layer1)
+    layer2 = np.dot(h, W2) + b2
     y_hat = softmax(layer2)
-    CE = - np.sum(np.dot(labels, y_hat))
+    cost = -np.sum(labels * np.log(y_hat))
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    raise NotImplementedError
+    error = y_hat - labels
+    gradb2 = np.sum(error, axis=0)
+    gradW2 = np.dot(h.T, error)
+    gradW1 = np.dot(data.T, np.dot(error, W2.T) * sigmoid_grad(h))
+    gradb1 = np.sum(np.dot(error, W2.T) * sigmoid_grad(h), axis=0)
     ### END YOUR CODE
 
     ### Stack gradients (do not modify)
@@ -117,4 +120,4 @@ def your_sanity_checks():
 
 if __name__ == "__main__":
     sanity_check()
-    your_sanity_checks()
+    #your_sanity_checks()
