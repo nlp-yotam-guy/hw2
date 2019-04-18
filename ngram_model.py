@@ -87,7 +87,7 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     the current counts and a linear interpolation
     """
     # Total words in eval_dataset
-    M=0
+    M=1
     # P is the probability that our language model gives to a sentences
     log_p = 0
     for sentence in eval_dataset:
@@ -106,19 +106,30 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
             else:
                 q_bi = 0
             # Calculate q_ML of the unigram
-            if (sentence[j],) in unigram_counts:
-                q_uni = float(unigram_counts[(sentence[j],)]) / M
+            if sentence[j] in unigram_counts:
+                q_uni = float(unigram_counts[sentence[j]]) / train_token_count
             else:
                 q_uni = 0
             # Calculate  the linear interpolation
-            q = (lambda1*q_tri + lambda2*q_bi + (1-lambda1-lambda2)*q_uni)
-            if q == 0:
+            q = (lambda1*q_tri + lambda2*q_bi + float((1.0-lambda1-lambda2))*q_uni)
+            if q <= 0:
                 continue
             M+=1
             log_p -= np.log2(q)
 
     perplexity = 2**(log_p / M)
     return perplexity
+
+def grid_search():
+    trigram_counts, bigram_counts, unigram_counts, token_count = train_ngrams(S_train)
+    lambdas1 = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}
+    lambdas2 = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}
+    for lambda1 in lambdas1:
+        for lambda2 in lambdas2:
+            if lambda1+lambda2 <= 1:
+                print "lambda1 " + str(lambda1) + ", lambda2 " + str(lambda2)
+                perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, lambda1, lambda2)
+                print "#perplexity: " + str(perplexity)
 
 def test_ngram():
     """
@@ -130,10 +141,11 @@ def test_ngram():
     print "#bigrams: " + str(len(bigram_counts))
     print "#unigrams: " + str(len(unigram_counts))
     print "#tokens: " + str(token_count)
-    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.4)
+    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.9, 0.1)
     print "#perplexity: " + str(perplexity)
     ### YOUR CODE HERE
     ### END YOUR CODE
 
 if __name__ == "__main__":
-    test_ngram()
+    #test_ngram()
+    grid_search()
