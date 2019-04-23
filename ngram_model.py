@@ -57,27 +57,15 @@ def train_ngrams(dataset):
     token_count = 0
 
     for sentence in dataset:
-        a = ['*','*']
-        a.extend(list(sentence))
-        sentence = a
-        # # unigrams
-        # for word in sentence:
-        #     token_count += add_to_dict(word,unigram_counts)
-        # # bigrams
-        # sentence_bigrams = generate_ngrams(sentence,2)
-        # for bigram in sentence_bigrams:
-        #     token_count += add_to_dict(bigram,bigram_counts)
-        # # trigrams
-        # sentence_trigrams = generate_ngrams(sentence,3)
-        # for trigram in sentence_trigrams:
-        #     token_count += add_to_dict(trigram,trigram_counts)
-
-        for j in range(len(sentence)-2):
-            token_count += add_to_dict((sentence[j],sentence[j+1],sentence[j+2]),trigram_counts)
-            token_count += add_to_dict((sentence[j], sentence[j+1]), bigram_counts)
-            # if j<=1:
-            #     continue
-            token_count += add_to_dict((sentence[j]), unigram_counts)
+        for j in range(2,len(sentence)):
+            add_to_dict((sentence[j-2],sentence[j-1],sentence[j]),trigram_counts)
+            add_to_dict((sentence[j-1], sentence[j]), bigram_counts)
+            add_to_dict((sentence[j]), unigram_counts)
+            token_count += 1
+        add_to_dict((sentence[0], sentence[1]), bigram_counts)
+        add_to_dict((sentence[0]), unigram_counts)
+        add_to_dict((sentence[1]), unigram_counts)
+        token_count += 2
 
     return trigram_counts, bigram_counts, unigram_counts, token_count
 
@@ -87,29 +75,29 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
     the current counts and a linear interpolation
     """
     # Total words in eval_dataset
-    M=1
+    M=0
     # P is the probability that our language model gives to a sentences
     log_p = 0
     for sentence in eval_dataset:
-        a = ['*', '*']
-        a.extend(list(sentence))
-        sentence = a
         for j in range(2, len(sentence)):
             # Calculate q_ML of the trigram
             if (sentence[j-2],sentence[j-1],sentence[j]) in trigram_counts:
                 q_tri = float(trigram_counts[(sentence[j-2],sentence[j-1],sentence[j])]) / bigram_counts[(sentence[j-2],sentence[j-1])]
             else:
                 q_tri = 0
+
             # Calculate q_ML of the bigram
             if (sentence[j-1],sentence[j]) in bigram_counts:
                 q_bi = float(bigram_counts[(sentence[j-1],sentence[j])]) / unigram_counts[(sentence[j-1])]
             else:
                 q_bi = 0
             # Calculate q_ML of the unigram
+
             if sentence[j] in unigram_counts:
                 q_uni = float(unigram_counts[sentence[j]]) / train_token_count
             else:
                 q_uni = 0
+
             # Calculate  the linear interpolation
             q = (lambda1*q_tri + lambda2*q_bi + float((1.0-lambda1-lambda2))*q_uni)
             if q <= 0:
@@ -117,19 +105,26 @@ def evaluate_ngrams(eval_dataset, trigram_counts, bigram_counts, unigram_counts,
             M+=1
             log_p -= np.log2(q)
 
-    perplexity = 2**(log_p / M)
+    perplexity = 2**(log_p / float(M))
     return perplexity
 
 def grid_search():
     trigram_counts, bigram_counts, unigram_counts, token_count = train_ngrams(S_train)
     lambdas1 = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}
     lambdas2 = {0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1}
+    min_ppl = float('inf')
+    opt_lambda = None
     for lambda1 in lambdas1:
         for lambda2 in lambdas2:
-            if lambda1+lambda2 <= 1:
+            if lambda1+lambda2 < 1:
                 print "lambda1 " + str(lambda1) + ", lambda2 " + str(lambda2)
                 perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, lambda1, lambda2)
+                if perplexity < min_ppl:
+                    min_ppl = perplexity
+                    opt_lambda = (lambda1,lambda2)
                 print "#perplexity: " + str(perplexity)
+    print 'best perplexity: '+ str(min_ppl)
+    print 'best params: l1=' + str(opt_lambda[0]) + ' l2: ' + str(opt_lambda[1])
 
 def test_ngram():
     """
@@ -141,11 +136,11 @@ def test_ngram():
     print "#bigrams: " + str(len(bigram_counts))
     print "#unigrams: " + str(len(unigram_counts))
     print "#tokens: " + str(token_count)
-    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.9, 0.1)
+    perplexity = evaluate_ngrams(S_dev, trigram_counts, bigram_counts, unigram_counts, token_count, 0.5, 0.5)
     print "#perplexity: " + str(perplexity)
     ### YOUR CODE HERE
     ### END YOUR CODE
 
 if __name__ == "__main__":
-    #test_ngram()
+    # test_ngram()
     grid_search()
