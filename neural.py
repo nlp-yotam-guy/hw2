@@ -32,7 +32,8 @@ def forward(data, label, params, dimensions):
     z2 = sigmoid(z)
     z3 = np.dot(z2, W2) + b2
     output = softmax(z3)
-    return output
+    output = output.flatten()
+    return output[label]
     ### END YOUR CODE
 
 def forward_backward_prop(data, labels, params, dimensions):
