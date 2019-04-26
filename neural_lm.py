@@ -76,11 +76,12 @@ def lm_wrapper(in_word_index, out_word_index, num_to_word_embedding, dimensions,
 
     # Construct the data batch and run you backpropogation implementation
     ### YOUR CODE HERE
-    first_in_words = in_word_index[:BATCH_SIZE]
-    first_out_words = out_word_index[:BATCH_SIZE]
+
+    rand_idx = np.random.choice(len(in_word_index),size=BATCH_SIZE)
+
     for i in range(BATCH_SIZE):
-        data[i] = num_to_word_embedding[first_in_words[i]]
-        labels[i][first_out_words[i]] = 1
+        data[i] = num_to_word_embedding[in_word_index[rand_idx[i]]]
+        labels[i][out_word_index[rand_idx[i]]] = 1
 
     cost,grad = forward_backward_prop(data,labels,params,dimensions)
     ### END YOUR CODE

@@ -74,8 +74,9 @@ def forward_backward_prop(data, labels, params, dimensions):
     error = y_hat - labels
     gradb2 = np.sum(error, axis=0)
     gradW2 = np.dot(h.T, error)
-    gradW1 = np.dot(data.T, np.dot(error, W2.T) * sigmoid_grad(h))
-    gradb1 = np.sum(np.dot(error, W2.T) * sigmoid_grad(h), axis=0)
+    delta1 = np.dot(error, W2.T) * sigmoid_grad(h)
+    gradW1 = np.dot(data.T, delta1)
+    gradb1 = np.sum(delta1, axis=0)
     ### END YOUR CODE
 
     ### Stack gradients (do not modify)
